@@ -35,7 +35,7 @@ public class Lesson2 {
             }
             for (int j = 0; j < strings[i].length; j++) {
                 try {
-                    sum += Integer.valueOf(strings[i][j]);
+                    sum += Integer.parseInt(strings[i][j]);
                 }
                 catch(Exception e) {
                     throw new MyArrayDataException(i,j);
