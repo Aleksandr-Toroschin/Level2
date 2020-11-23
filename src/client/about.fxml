@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.AboutController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.AboutController">
    <children>
       <Label layoutX="34.0" layoutY="24.0" prefHeight="36.0" prefWidth="333.0" styleClass="text-name-app" stylesheets="@style.css" text="Chat 2020" />
       <Label layoutX="36.0" layoutY="76.0" styleClass="text-des-app" stylesheets="@style.css" text="Сетевой чат" />

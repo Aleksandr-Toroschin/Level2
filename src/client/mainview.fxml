@@ -16,7 +16,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.Controller">
    <top>
       <MenuBar BorderPane.alignment="CENTER">
         <menus>
@@ -62,13 +62,13 @@
                   </AnchorPane>
                   <HBox maxWidth="1.7976931348623157E308" prefHeight="37.0" prefWidth="600.0">
                      <children>
-                        <TextField fx:id="inputField" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minWidth="120.0" onAction="#addTextToList" prefHeight="41.0" prefWidth="312.0">
+                        <TextField fx:id="inputField" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minWidth="120.0" onAction="#sendMessage" prefHeight="41.0" prefWidth="312.0">
                            <styleClass>
                               <String fx:value="input-field" />
                               <String fx:value="text-field" />
                            </styleClass>
                         </TextField>
-                        <Button fx:id="btnSend" maxHeight="1.7976931348623157E308" maxWidth="119.0" minWidth="119.0" mnemonicParsing="false" onAction="#addTextToList" prefHeight="41.0" prefWidth="119.0" styleClass="btnSend" text="Отправить">
+                        <Button fx:id="btnSend" maxHeight="1.7976931348623157E308" maxWidth="119.0" minWidth="119.0" mnemonicParsing="false" onAction="#sendMessage" prefHeight="41.0" prefWidth="119.0" styleClass="btnSend" text="Отправить">
                            <font>
                               <Font size="16.0" />
                            </font>

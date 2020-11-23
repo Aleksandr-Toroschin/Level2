@@ -1,4 +1,4 @@
-package sample;
+package client;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Controller {
-    private final String aboutWindow="about.fxml";
+    private final String aboutWindow = "about.fxml";
 
     @FXML
     private TextField inputField;
@@ -39,22 +39,36 @@ public class Controller {
     @FXML
     private final ObservableList<Contact> contacts = FXCollections.observableArrayList();
 
+    private Network network;
+
+    Main echoClient;
+
     @FXML
     public void initialize() {
         nameUser.setCellValueFactory(new PropertyValueFactory<>("name"));
-
         tableUsers.setItems(contacts);
-        contacts.add(new Contact("Иван"));
+        contacts.addAll(Main.TEST_USERS);
     }
 
     @FXML
-    public void addTextToList() {
+    private void sendMessage() {
         String text = inputField.getText();
+        addTextToList(text);
+        inputField.clear();
+
+        try {
+            network.getDataOutputStream().writeUTF(text);
+        } catch (IOException e) {
+            System.out.println("Не удалось отправить сообщение");
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void addTextToList(String text) {
         if (!text.isBlank()) {
             messagesField.getItems().add(text);
-
         }
-        inputField.setText("");
     }
 
     @FXML
@@ -86,10 +100,16 @@ public class Controller {
         }
     }
 
-
-
     @FXML
     public void exit() {
         System.exit(0);
+    }
+
+    public void setNetwork(Network network) {
+        this.network = network;
+    }
+
+    public void setClient(Main client) {
+        this.echoClient = client;
     }
 }
