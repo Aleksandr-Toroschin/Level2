@@ -1,7 +1,5 @@
 package ru.toroschin;
 
-import java.util.TreeMap;
-
 public class Lesson5 {
 
     private static final int size = 10000000;
@@ -24,7 +22,7 @@ public class Lesson5 {
         }
 
         long beginTime = System.currentTimeMillis();
-        Calculate(arr);
+        Calculate(arr, 0);
         System.out.println("Время работы первого метода: " + (System.currentTimeMillis() - beginTime));
     }
 
@@ -46,7 +44,7 @@ public class Lesson5 {
         var t1 = new Thread(new Runnable() {
             @Override
             public void run() {
-                Calculate(a1);
+                Calculate(a1, 0);
             }
         }
         );
@@ -54,7 +52,7 @@ public class Lesson5 {
         var t2 = new Thread(new Runnable() {
             @Override
             public void run() {
-                Calculate(a2);
+                Calculate(a2, h);
             }
         }
         );
@@ -75,9 +73,9 @@ public class Lesson5 {
         System.out.println("Время работы второго метода: " + (System.currentTimeMillis() - beginTime));
     }
 
-    public static void Calculate(float[] arr) {
+    public static void Calculate(float[] arr, int shiftInd) {
         for (int i = 0; i < arr.length - 1; i++) {
-            arr[i] = (float) (arr[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) * Math.cos(0.4f + i / 2));
+            arr[i] = (float) (arr[i] * Math.sin(0.2f + (shiftInd+i) / 5) * Math.cos(0.2f + (shiftInd+i) / 5) * Math.cos(0.4f + (shiftInd+i) / 2));
         }
     }
 
