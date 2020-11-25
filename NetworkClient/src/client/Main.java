@@ -1,7 +1,8 @@
 package client;
 
+import client.controllers.Controller;
+import client.models.Network;
 import javafx.application.Application;
-import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -11,7 +12,7 @@ import javafx.stage.Stage;
 import java.util.List;
 
 public class Main extends Application {
-    private static final String mainWindow = "mainview.fxml";
+    private static final String mainWindow = "views/mainview.fxml";
     public static final List<Contact> TEST_USERS = List.of(new Contact("Иван"), new Contact("David"));
 
     @Override

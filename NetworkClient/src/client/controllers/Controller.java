@@ -1,5 +1,8 @@
-package client;
+package client.controllers;
 
+import client.Contact;
+import client.Main;
+import client.models.Network;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -16,7 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Controller {
-    private final String aboutWindow = "about.fxml";
+    private final String aboutWindow = "views/about.fxml";
 
     @FXML
     private TextField inputField;

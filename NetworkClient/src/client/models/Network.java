@@ -1,4 +1,6 @@
-package client;
+package client.models;
+
+import client.controllers.Controller;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
