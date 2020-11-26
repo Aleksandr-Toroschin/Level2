@@ -1,8 +1,10 @@
 package client.controllers;
 
 import client.Contact;
-import client.Main;
+import client.NetworkClient;
 import client.models.Network;
+import javafx.beans.Observable;
+import javafx.beans.value.ObservableStringValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -26,6 +28,7 @@ public class Controller {
 
     @FXML
     private ListView<String> messagesField;
+    private final List<String> listMessages = FXCollections.observableArrayList();
 
     @FXML
     private Button btnSend;
@@ -44,26 +47,29 @@ public class Controller {
 
     private Network network;
 
-    Main echoClient;
+    NetworkClient echoClient;
 
     @FXML
     public void initialize() {
         nameUser.setCellValueFactory(new PropertyValueFactory<>("name"));
         tableUsers.setItems(contacts);
-        contacts.addAll(Main.TEST_USERS);
+        //contacts.addAll(NetworkClient.TEST_USERS);
+        messagesField.setItems(FXCollections.observableArrayList(listMessages));
     }
 
     @FXML
     private void sendMessage() {
         String text = inputField.getText();
-        addTextToList(text);
-        inputField.clear();
+        if (!text.isBlank()) {
+            addTextToList(text);
+            inputField.clear();
 
-        try {
-            network.getDataOutputStream().writeUTF(text);
-        } catch (IOException e) {
-            System.out.println("Не удалось отправить сообщение");
-            e.printStackTrace();
+            try {
+                network.getDataOutputStream().writeUTF(text);
+            } catch (IOException e) {
+                System.out.println("Не удалось отправить сообщение");
+                e.printStackTrace();
+            }
         }
     }
 
@@ -71,6 +77,7 @@ public class Controller {
     public void addTextToList(String text) {
         if (!text.isBlank()) {
             messagesField.getItems().add(text);
+            listMessages.add(text);
         }
     }
 
@@ -84,7 +91,7 @@ public class Controller {
     public void showAbout() {
         try {
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(Main.class.getResource(aboutWindow));
+            loader.setLocation(NetworkClient.class.getResource(aboutWindow));
             AnchorPane page = loader.load();
 
             Stage aboutStage = new Stage();
@@ -112,7 +119,7 @@ public class Controller {
         this.network = network;
     }
 
-    public void setClient(Main client) {
+    public void setClient(NetworkClient client) {
         this.echoClient = client;
     }
 }

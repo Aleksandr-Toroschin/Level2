@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Network {
+    private final String AUTH_CMD_PREFIX = "/auth";
+    private final String AUTHOK_CMD_PREFIX = "/authOk";
+    private final String AUTHERR_CMD_PREFIX = "/autherr";
 
     private static final String SERVER_HOST = "localhost";
     private static final int SERVER_PORT = 8189;
@@ -19,6 +22,8 @@ public class Network {
     private DataOutputStream dataOutputStream;
 
     private Socket socket;
+
+    private String userName;
 
     public Network() {
         this(SERVER_HOST, SERVER_PORT);
@@ -63,7 +68,7 @@ public class Network {
             try {
                 while (true) {
                     String message = dataInputStream.readUTF();
-                    controller.addTextToList("Сервер: " + message);
+                    controller.addTextToList(message);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -71,5 +76,25 @@ public class Network {
         } );
         thread.setDaemon(true);
         thread.start();
+    }
+
+    public String sendAuthCommand(String login, String pw) {
+        try {
+            dataOutputStream.writeUTF(AUTH_CMD_PREFIX+" "+login+" "+pw);
+            String response = dataInputStream.readUTF();
+            if (response.startsWith(AUTHOK_CMD_PREFIX)) {
+                this.userName = response.split("\\s+",2)[1];
+                return null;
+            } else {
+                return response.split("\\s+",2)[0];
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return e.getMessage();
+        }
+    }
+
+    public String getUserName() {
+        return userName;
     }
 }

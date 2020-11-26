@@ -8,6 +8,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class MyServer {
     private final ServerSocket serverSocket;
@@ -22,6 +23,7 @@ public class MyServer {
 
     public void start() throws IOException {
         System.out.println("Сервер запущен");
+        consoleRead();
 
         try {
             while (true) {
@@ -33,6 +35,28 @@ public class MyServer {
         } finally {
             serverSocket.close();
         }
+    }
+
+    private void consoleRead() {
+        Thread threadSout = new Thread(() -> {
+            while (true) {
+                Scanner scanner = new Scanner(System.in);
+                if (scanner.hasNext()) {
+                    String message = scanner.nextLine();
+                    if (message.equals("/exit")) {
+                        break;
+                    }
+                    try {
+                        clientHandlers.get(0).sendMessage(message);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+//                out.writeUTF(message);
+                }
+            }
+        });
+        threadSout.setDaemon(true);
+        threadSout.start();
     }
 
     private void waitAndProcessNewClientConnection() throws IOException {

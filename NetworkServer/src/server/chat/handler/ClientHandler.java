@@ -46,6 +46,7 @@ public class ClientHandler {
             String message = in.readUTF();
             System.out.println("попытка аутентификации");
             if (message.startsWith(AUTH_CMD_PREFIX)) {
+
                 String[] parts = message.split("\\s+", 3);
                 String login = parts[1];
                 String password = parts[2];
@@ -58,6 +59,7 @@ public class ClientHandler {
                         out.writeUTF(AUTHOK_CMD_PREFIX + " " + userName);
                         myServer.addUser(this);
                         myServer.broadcastMessage(userName + " присоединился", this);
+                        System.out.println("Пользователь "+userName+" успешно подключен");
                         break;
                     }
                 } else {
