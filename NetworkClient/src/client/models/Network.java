@@ -11,6 +11,8 @@ public class Network {
     private final String AUTH_CMD_PREFIX = "/auth";
     private final String AUTHOK_CMD_PREFIX = "/authOk";
     private final String AUTHERR_CMD_PREFIX = "/autherr";
+    private final String PERSON_MES_CMD_PREFIX = "/w";
+    private final String USERS_CMD_PREFIX = "/users";
 
     private static final String SERVER_HOST = "localhost";
     private static final int SERVER_PORT = 8189;
@@ -68,7 +70,12 @@ public class Network {
             try {
                 while (true) {
                     String message = dataInputStream.readUTF();
-                    controller.addTextToList(message);
+                    // если это сообщение содержит список подключеныых пользователей
+                    if (message.startsWith(USERS_CMD_PREFIX)) {
+                        controller.addUserInList(message.split("\\s+",2)[1]);
+                    } else {
+                        controller.addTextToList(message);
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -86,7 +93,7 @@ public class Network {
                 this.userName = response.split("\\s+",2)[1];
                 return null;
             } else {
-                return response.split("\\s+",2)[0];
+                return response; //.split("\\s+",2)[0];
             }
         } catch (IOException e) {
             e.printStackTrace();

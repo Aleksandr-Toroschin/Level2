@@ -103,6 +103,18 @@ public class MyServer {
                 }
             }
         }
-
     }
+
+    public void personalMessage(String message, String nickName) {
+        for (ClientHandler clientHandler : clientHandlers) {
+            if (clientHandler.getNickName().equals(nickName)) {
+                try {
+                    clientHandler.sendMessage(message);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
 }

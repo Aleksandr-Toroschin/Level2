@@ -6,12 +6,14 @@ public class User {
     private final String name;
     private final String login;
     private final String password;
+    private final String nickName;
 
 
-    public User(String name, String login, String password) {
+    public User(String name, String login, String password, String nikName) {
         this.name = name;
         this.login = login;
         this.password = password;
+        this.nickName = nikName;
     }
 
     public String getName() {
@@ -42,11 +44,16 @@ public class User {
         User user = (User) o;
         return name.equals(user.name) &&
                 login.equals(user.login) &&
-                password.equals(user.password);
+                password.equals(user.password) &&
+                nickName.equals(user.nickName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, login, password);
+        return Objects.hash(name, login, password, nickName);
+    }
+
+    public String getNickName() {
+        return nickName;
     }
 }

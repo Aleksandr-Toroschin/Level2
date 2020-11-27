@@ -9,6 +9,7 @@
 
 .input-field {
     -fx-border-radius: 5;
+    -fx-border-width: 1;
     -fx-background-radius: 5;
     -fx-text-fill: #393939;
     -fx-font-size: 14;

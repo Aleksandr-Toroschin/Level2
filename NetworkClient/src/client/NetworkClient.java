@@ -74,7 +74,7 @@ public class NetworkClient extends Application {
 
     public static void showAlert(String errorMessage, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Проблемы с соединением");
+        alert.setTitle("Ошибка");
         alert.setHeaderText(errorMessage);
         alert.setContentText(message);
         alert.showAndWait();

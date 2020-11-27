@@ -27,11 +27,9 @@ public class Controller {
     private TextField inputField;
 
     @FXML
-    private ListView<String> messagesField;
+    private TextArea messagesField;
+    //private ListView<String> messagesField;
     private final List<String> listMessages = FXCollections.observableArrayList();
-
-    @FXML
-    private Button btnSend;
 
     @FXML
     private TableView<Contact> tableUsers;
@@ -54,14 +52,14 @@ public class Controller {
         nameUser.setCellValueFactory(new PropertyValueFactory<>("name"));
         tableUsers.setItems(contacts);
         //contacts.addAll(NetworkClient.TEST_USERS);
-        messagesField.setItems(FXCollections.observableArrayList(listMessages));
+        //messagesField.setItems(FXCollections.observableArrayList(listMessages));
     }
 
     @FXML
     private void sendMessage() {
         String text = inputField.getText();
         if (!text.isBlank()) {
-            addTextToList(text);
+            addTextToList("Я: " + text);
             inputField.clear();
 
             try {
@@ -76,14 +74,17 @@ public class Controller {
     @FXML
     public void addTextToList(String text) {
         if (!text.isBlank()) {
-            messagesField.getItems().add(text);
-            listMessages.add(text);
+            //messagesField.getItems().add(text);
+            //listMessages.add(text);
+            messagesField.appendText(text);
+            messagesField.appendText(System.lineSeparator());
         }
     }
 
     @FXML
     public void reset() {
-        messagesField.getItems().clear();
+        //messagesField.getItems().clear();
+        messagesField.clear();
         inputField.setText("");
     }
 
@@ -121,5 +122,12 @@ public class Controller {
 
     public void setClient(NetworkClient client) {
         this.echoClient = client;
+    }
+
+    public void addUserInList(String mes) {
+        String[] usersList = mes.split("\\s+");
+        for (String s : usersList) {
+            contacts.add(new Contact(s));
+        }
     }
 }
