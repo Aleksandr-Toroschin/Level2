@@ -39,7 +39,7 @@ public class AuthDialogController {
         if (errorMessage == null) {
             networkClient.openChat();
         } else {
-            NetworkClient.showAlert("Ошибка авторизации", errorMessage);
+            NetworkClient.showAlert("Авторизация", errorMessage);
         }
     }
 

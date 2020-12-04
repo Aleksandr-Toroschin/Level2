@@ -5,7 +5,7 @@ import server.chat.MyServer;
 import java.io.IOException;
 
 public class ServerApp {
-    private static int SERVER_PORT = 8189;
+    private static final int SERVER_PORT = 8189;
 
     public static void main(String[] args) {
         int port = SERVER_PORT;

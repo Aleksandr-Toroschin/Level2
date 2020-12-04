@@ -1,129 +1,157 @@
 package server.chat.handler;
 
+import clientserver.Command;
+import clientserver.CommandType;
+import clientserver.commands.*;
 import server.chat.MyServer;
 
-import javax.sound.midi.Soundbank;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.util.Timer;
 
 public class ClientHandler {
-    private final String AUTH_CMD_PREFIX = "/auth";
-    private final String AUTHOK_CMD_PREFIX = "/authOk";
-    private final String AUTHERR_CMD_PREFIX = "/autherr";
-    private final String PERSON_MES_CMD_PREFIX = "/w";
-    private final String USERS_CMD_PREFIX = "/users";
-
-
     private final MyServer myServer;
     private final Socket clientSocket;
-    private DataInputStream in;
-    private DataOutputStream out;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
     private String userName;
     private String nickName;
+    private boolean isAction;
 
     public ClientHandler(MyServer myServer, Socket clientSocket) {
         this.myServer = myServer;
         this.clientSocket = clientSocket;
+        isAction = false;
     }
 
-    public void hadle() throws IOException {
-        in = new DataInputStream(clientSocket.getInputStream());
-        out = new DataOutputStream(clientSocket.getOutputStream());
+    public void handle() throws IOException {
+        in = new ObjectInputStream(clientSocket.getInputStream());
+        out = new ObjectOutputStream(clientSocket.getOutputStream());
 
         new Thread(() -> {
-            boolean notify = false;
             try {
-                notify = authentication();
+                TaskTimeout task = new TaskTimeout(this);
+                Timer timer = new Timer();
+                timer.schedule(task, 120*1000);
+                authentication();
                 readMessage();
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                closeConnection(notify);
             }
         }).start();
 
     }
 
-    private boolean authentication() throws IOException {
+    private void authentication() throws IOException {
         while (true) {
-            String message = in.readUTF();
-            System.out.println("попытка аутентификации");
-            if (message.startsWith(AUTH_CMD_PREFIX)) {
-
-                String[] parts = message.split("\\s+", 3);
-                String login = parts[1];
-                String password = parts[2];
+            Command command = readCommand();
+            if (command == null) {
+                continue;
+            }
+            if (command.getType() == CommandType.AUTH) {
+                isAction = true;
+                AuthCommandData data = (AuthCommandData) command.getData();
+                String login = data.getLogin();
+                String password = data.getPassword();
                 this.userName = myServer.getAuthService().getUserName(login, password);
 
                 if (userName != null) {
                     if (myServer.isUserBusy(userName)) {
-                        out.writeUTF(AUTHERR_CMD_PREFIX + " Пользователь уже подключен");
+                        sendMessage(Command.authErrorCommand(userName + " Пользователь уже подключен"));
                     } else {
                         this.nickName = myServer.getAuthService().getNickNameByLogin(login);
-                        out.writeUTF(AUTHOK_CMD_PREFIX + " " + userName);
+                        sendMessage(Command.authOkCommand(userName));
                         myServer.addUser(this);
-                        myServer.broadcastMessage(userName + " присоединился", this);
-                        myServer.broadcastMessage(USERS_CMD_PREFIX + " " + userName, this);
-                        System.out.println("Пользователь "+userName+" успешно подключен");
-                        return true;
+                        myServer.broadcastMessage(Command.messageInfoCommand("- "+userName+" присоединился", null), this);
+                        System.out.println("Пользователь " + userName + " успешно подключен");
+                        return;
                     }
                 } else {
-                    out.writeUTF(AUTHERR_CMD_PREFIX + " Неверный логин или пароль");
+                    sendMessage(Command.authErrorCommand("Неверный логин или пароль"));
                 }
+            } else {
+                sendMessage(Command.authErrorCommand("Ошибка авторизации"));
             }
         }
+    }
+
+    private Command readCommand() {
+        try {
+            Object o = in.readObject();
+            if (o instanceof Command) {
+                return (Command) o;
+            } else {
+                System.err.println("Получен неизвестный объект");
+            }
+        } catch (ClassNotFoundException | IOException e) {
+//            System.err.println("Не удалось получить объект");
+//            e.printStackTrace();
+        }
+        return null;
     }
 
     public String getUserName() {
         return userName;
     }
 
-    public void sendMessage(String message) throws IOException {
-        out.writeUTF(message);
+    public void sendMessage(Command command) throws IOException {
+        out.writeObject(command);
     }
 
     public void readMessage() throws IOException {
         while (true) {
-            String message = in.readUTF();
-            System.out.println(message + " | " + userName + " : " + message);
-            if (message.startsWith(PERSON_MES_CMD_PREFIX)) {
-                String[] parts = message.split("\\s+", 3);
-                String nick = parts[1];
-                message = parts[2];
-                myServer.personalMessage(userName + "  личное!: " + message, nick);
-            } else if (message.startsWith("/exit")) {
-                return;
-            } else {
-                myServer.broadcastMessage(userName + ": " + message, this);
+            Command command = readCommand();
+            if (command==null) {
+                continue;
+            }
+            switch (command.getType()) {
+                case PRIVATE_MESSAGE: {
+                    PrivateMessageCommandData data = (PrivateMessageCommandData) command.getData();
+                    String name = data.getReceiver();
+                    String message = data.getMessage();
+                    myServer.personalMessage(Command.messageInfoCommand(message, userName), name);
+                    break;
+                }
+                case END: {
+                    closeConnection(true);
+                    return;
+                }
+                case PUBLIC_MESSAGE: {
+                    PublicMessageCommandData data = (PublicMessageCommandData) command.getData();
+                    String name = data.getSender();
+                    String message = data.getMessage();
+                    myServer.broadcastMessage(Command.messageInfoCommand(message, name), this);
+                    break;
+                }
+                default: {
+                    String errMessage = "Неизвестный тип команды "+command.getType();
+                    System.err.println(errMessage);
+                    sendMessage(Command.errorCommand(errMessage));
+                }
             }
         }
     }
 
     public void closeConnection(boolean notify) {
         if (notify) {
-            myServer.broadcastMessage(userName + " вышел из чата", this);
+            myServer.broadcastMessage(Command.messageInfoCommand("вышел из чата", userName), this);
         }
-        myServer.deleteUser( this );
         try {
+            myServer.deleteUser(this);
             in.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
             out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
             clientSocket.close();
         } catch (IOException e) {
+            System.out.println("Соединение ");
             e.printStackTrace();
         }
     }
 
     public String getNickName() {
         return nickName;
+    }
+
+    public boolean isAction() {
+        return isAction;
     }
 }

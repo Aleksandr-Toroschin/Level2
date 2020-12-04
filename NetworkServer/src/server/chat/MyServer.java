@@ -1,5 +1,6 @@
 package server.chat;
 
+import clientserver.Command;
 import server.chat.auth.BaseAuthService;
 import server.chat.handler.ClientHandler;
 
@@ -23,7 +24,7 @@ public class MyServer {
 
     public void start() throws IOException {
         System.out.println("Сервер запущен");
-        consoleRead();
+        //consoleRead();
 
         try {
             while (true) {
@@ -46,12 +47,7 @@ public class MyServer {
                     if (message.equals("/exit")) {
                         break;
                     }
-                    try {
-                        clientHandlers.get(0).sendMessage(message);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-//                out.writeUTF(message);
+                    broadcastMessage(Command.messageInfoCommand(message, "Server"), null);
                 }
             }
         });
@@ -68,14 +64,14 @@ public class MyServer {
 
     private void processClientConnection(Socket clientSocket) throws IOException {
         ClientHandler clientHandler = new ClientHandler(this, clientSocket);
-        clientHandler.hadle();
+        clientHandler.handle();
     }
 
     public BaseAuthService getAuthService() {
         return authService;
     }
 
-    public boolean isUserBusy(String userName) {
+    public synchronized boolean isUserBusy(String userName) {
         for (ClientHandler clientHandler : clientHandlers) {
             if (clientHandler.getUserName().equals(userName)) {
                 return true;
@@ -84,20 +80,31 @@ public class MyServer {
         return false;
     }
 
-    public void addUser(ClientHandler clientHandler) {
+    public synchronized void addUser(ClientHandler clientHandler) {
         clientHandlers.add(clientHandler);
+        List<String> usernames = getAllUsernames();
+        broadcastMessage(Command.updateUsersListCommand(usernames),null);
     }
 
-    public void deleteUser(ClientHandler clientHandler) {
+    private List<String> getAllUsernames() {
+        List<String> usernames = new ArrayList<>();
+        for (ClientHandler clientHandler : clientHandlers) {
+            usernames.add(clientHandler.getUserName());
+        }
+        return usernames;
+    }
+
+    public synchronized void deleteUser(ClientHandler clientHandler) {
         clientHandlers.remove(clientHandler);
-
+        List<String> usernames = getAllUsernames();
+        broadcastMessage(Command.updateUsersListCommand(usernames),null);
     }
 
-    public void broadcastMessage(String message, ClientHandler sender) {
+    public synchronized void broadcastMessage(Command command, ClientHandler sender) {
         for (ClientHandler clientHandler : clientHandlers) {
             if (!clientHandler.equals(sender)) {
                 try {
-                    clientHandler.sendMessage(message);
+                    clientHandler.sendMessage(command);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -105,11 +112,12 @@ public class MyServer {
         }
     }
 
-    public void personalMessage(String message, String nickName) {
+    public synchronized void personalMessage(Command command, String userName) {
         for (ClientHandler clientHandler : clientHandlers) {
-            if (clientHandler.getNickName().equals(nickName)) {
+            if (clientHandler.getUserName().equals(userName)) {
                 try {
-                    clientHandler.sendMessage(message);
+                    clientHandler.sendMessage(command);
+                    return;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

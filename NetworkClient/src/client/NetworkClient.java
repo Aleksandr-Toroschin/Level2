@@ -12,11 +12,14 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class NetworkClient extends Application {
     private static final String mainWindow = "views/mainview.fxml";
     private static final String loginWindow = "views/auth-dialog.fxml";
-    public static final List<Contact> TEST_USERS = List.of(new Contact("Иван"), new Contact("David"));
+//    public static final List<Contact> TEST_USERS = List.of(new Contact("Иван"), new Contact("David"));
+    public static final List<String> TEST_USERS_STR = List.of("Иван", "David");
 
     public Stage primaryStage;
     private Network network;
@@ -47,7 +50,6 @@ public class NetworkClient extends Application {
 
         primaryStage.setTitle("Chat 2020");
         primaryStage.setScene(new Scene(root));
-//        primaryStage.show();
 
         network = new Network();
 
@@ -55,13 +57,17 @@ public class NetworkClient extends Application {
         authDialogController.setNetwork(network);
         authDialogController.setNetworkClient(this);
 
-        if (!network.connect()) {
+        TaskWait task = new TaskWait(network);
+        Timer timer = new Timer();
+
+        if (network.connect()) {
+            timer.schedule(task, 120*1000);
+        } else {
             showAlert("Connect", "Не удалось подключиться к серверу");
         }
 
         controller = loader.getController();
         controller.setNetwork(network);
-        controller.setClient(this);
 
         //network.waitMessageFromServer(controller);
 

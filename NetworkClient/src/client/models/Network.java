@@ -1,31 +1,31 @@
 package client.models;
 
+import client.NetworkClient;
 import client.controllers.Controller;
+import clientserver.Command;
+import clientserver.commands.*;
+import javafx.application.Platform;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 
 public class Network {
-    private final String AUTH_CMD_PREFIX = "/auth";
-    private final String AUTHOK_CMD_PREFIX = "/authOk";
-    private final String AUTHERR_CMD_PREFIX = "/autherr";
-    private final String PERSON_MES_CMD_PREFIX = "/w";
-    private final String USERS_CMD_PREFIX = "/users";
-
     private static final String SERVER_HOST = "localhost";
     private static final int SERVER_PORT = 8189;
 
     private final String serverHost;
     private final int serverPort;
 
-    private DataInputStream dataInputStream;
-    private DataOutputStream dataOutputStream;
+    private ObjectInputStream dataInputStream;
+    private ObjectOutputStream dataOutputStream;
 
     private Socket socket;
 
     private String userName;
+
+    private boolean activeChat;
+
+    private boolean isAction;
 
     public Network() {
         this(SERVER_HOST, SERVER_PORT);
@@ -34,21 +34,23 @@ public class Network {
     public Network(String serverHost, int serverPort) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
+        isAction = false;
+        activeChat = true;
     }
 
-    public DataInputStream getDataInputStream() {
+    public ObjectInputStream getDataInputStream() {
         return dataInputStream;
     }
 
-    public DataOutputStream getDataOutputStream() {
+    public ObjectOutputStream getDataOutputStream() {
         return dataOutputStream;
     }
 
     public boolean connect() {
         try {
             socket = new Socket(serverHost, serverPort);
-            dataInputStream = new DataInputStream(socket.getInputStream());
-            dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            dataOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            dataInputStream = new ObjectInputStream(socket.getInputStream());
             return true;
         } catch (IOException e) {
             System.out.println("Не удалось установить соединение");
@@ -58,42 +60,90 @@ public class Network {
     }
 
     public void close() {
+        activeChat = false;
         try {
+            dataOutputStream.writeObject(Command.endCommand());
             socket.close();
         } catch (IOException e) {
+            System.out.println("Не удалось сообщить о выходе из чата");
             e.printStackTrace();
         }
+        System.exit(0);
     }
 
     public void waitMessageFromServer(Controller controller) {
         Thread thread = new Thread(() -> {
-            try {
-                while (true) {
-                    String message = dataInputStream.readUTF();
-                    // если это сообщение содержит список подключеныых пользователей
-                    if (message.startsWith(USERS_CMD_PREFIX)) {
-                        controller.addUserInList(message.split("\\s+",2)[1]);
-                    } else {
-                        controller.addTextToList(message);
+            while (activeChat) {
+                try {
+                    Command command = readCommand();
+                    if (command == null) {
+                        System.out.println("Получена неопределенная команда");
+                        //NetworkClient.showAlert("Ошибка сервера", "Получена неопределенная команда");
+                        continue;
                     }
+                    switch (command.getType()) {
+                        case INFO_MESSAGE: {
+                            MessageInfoCommandData data = (MessageInfoCommandData) command.getData();
+                            String sender = data.getSender();
+                            String message = data.getMessage();
+                            String formatMessage = sender != null ? String.format("%s: %s", sender, message) : message;
+                            Platform.runLater(() -> {
+                                controller.addTextToList(formatMessage);
+                            });
+                            break;
+                        }
+                        case UPDATE_USERS_LIST: {
+                            UpdateUsersListCommandData data = (UpdateUsersListCommandData) command.getData();
+                            Platform.runLater(() -> {
+                                controller.updateUsers(data.getUsers());
+                            });
+                            break;
+                        }
+                        case ERROR: {
+                            ErrorCommandData data = (ErrorCommandData) command.getData();
+                            Platform.runLater(() -> {
+                                NetworkClient.showAlert("Сообщение", data.getErrorMessage());
+                            });
+                            break;
+                        }
+                        default: {
+                            Platform.runLater(() -> {
+                                NetworkClient.showAlert("Получена неизвестная команда", command.getType().toString());
+                            });
+                        }
+                    }
+                } catch (NullPointerException e) {
+                    System.out.println("Ошибка при обработке команды");
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-        } );
+        });
         thread.setDaemon(true);
         thread.start();
     }
 
     public String sendAuthCommand(String login, String pw) {
         try {
-            dataOutputStream.writeUTF(AUTH_CMD_PREFIX+" "+login+" "+pw);
-            String response = dataInputStream.readUTF();
-            if (response.startsWith(AUTHOK_CMD_PREFIX)) {
-                this.userName = response.split("\\s+",2)[1];
-                return null;
-            } else {
-                return response; //.split("\\s+",2)[0];
+            isAction = true;
+            dataOutputStream.writeObject(Command.authCommand(login, pw));
+            Command command = readCommand();
+            if (command == null) {
+                return "Не могу прочитать команду с сервера";
+            }
+            switch (command.getType()) {
+                case AUTH_OK: {
+                    AuthOkCommandData data = (AuthOkCommandData) command.getData();
+                    this.userName = data.getUsername();
+                    return null;
+                }
+                case AUTH_ERROR:
+                case ERROR: {
+                    AuthErrorCommandData data = (AuthErrorCommandData) command.getData();
+                    return data.getErrorMessage();
+                }
+                default: {
+                    return "Неопознанный тип данных";
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -101,7 +151,36 @@ public class Network {
         }
     }
 
+    public void sendPrivateMessage(String message, String recipient) throws IOException {
+        dataOutputStream.writeObject(Command.privateMessageCommand(recipient, message));
+    }
+
+    public void sendPublicMessage(String message) throws IOException {
+        dataOutputStream.writeObject(Command.publicMessageCommand(userName, message));
+    }
+
     public String getUserName() {
         return userName;
+    }
+
+    private Command readCommand() {
+        try {
+            return (Command) dataInputStream.readObject();
+//            Object o = dataInputStream.readObject();
+//
+//            if (o instanceof Command) {
+//                return (Command) o;
+//            } else {
+//                System.err.println("Получен неизвестный объект");
+//            }
+        } catch (ClassNotFoundException | IOException e) {
+            System.err.println("Не удалось получить объект");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public boolean isAction() {
+        return isAction;
     }
 }
